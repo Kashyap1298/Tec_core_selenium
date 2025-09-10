@@ -1,0 +1,153 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using NUnit.Framework;
+
+namespace SeleniumLoginTest
+{
+    class TestRunner
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("=================================");
+            Console.WriteLine("   Login Test Automation Suite   ");
+            Console.WriteLine("=================================\n");
+
+            string testFilter = "";
+            
+            if (args.Length > 0)
+            {
+                Console.WriteLine("Test execution options:");
+                Console.WriteLine("1. Run all tests");
+                Console.WriteLine("2. Run positive tests only");
+                Console.WriteLine("3. Run negative tests only");
+                Console.WriteLine("4. Run security tests only");
+                
+                if (args[0].ToLower() == "positive")
+                {
+                    testFilter = "--where \"cat == Positive\"";
+                    Console.WriteLine("\nRunning POSITIVE tests only...\n");
+                }
+                else if (args[0].ToLower() == "negative")
+                {
+                    testFilter = "--where \"cat == Negative\"";
+                    Console.WriteLine("\nRunning NEGATIVE tests only...\n");
+                }
+                else if (args[0].ToLower() == "security")
+                {
+                    testFilter = "--where \"cat == Security\"";
+                    Console.WriteLine("\nRunning SECURITY tests only...\n");
+                }
+                else
+                {
+                    Console.WriteLine("\nRunning ALL tests...\n");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Running ALL tests...\n");
+                Console.WriteLine("Tip: You can run specific test categories:");
+                Console.WriteLine("  dotnet run positive  - Run positive tests only");
+                Console.WriteLine("  dotnet run negative  - Run negative tests only");
+                Console.WriteLine("  dotnet run security  - Run security tests only\n");
+            }
+
+            try
+            {
+                string projectPath = Directory.GetCurrentDirectory();
+                string dllPath = Path.Combine(projectPath, "bin", "Debug", "net9.0", "SeleniumLoginTest.dll");
+                
+                if (!File.Exists(dllPath))
+                {
+                    Console.WriteLine("Test assembly not found. Building project...");
+                    Process buildProcess = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "dotnet",
+                            Arguments = "build",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            CreateNoWindow = true
+                        }
+                    };
+                    
+                    buildProcess.Start();
+                    buildProcess.WaitForExit();
+                    
+                    if (buildProcess.ExitCode != 0)
+                    {
+                        Console.WriteLine("Build failed. Please fix compilation errors.");
+                        return;
+                    }
+                }
+
+                Console.WriteLine("Executing tests...\n");
+                
+                Process testProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "dotnet",
+                        Arguments = $"test \"{projectPath}\" {testFilter} --logger:console;verbosity=normal",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = false,
+                        CreateNoWindow = false
+                    }
+                };
+                
+                testProcess.Start();
+                testProcess.WaitForExit();
+
+                Console.WriteLine("\n=================================");
+                Console.WriteLine("     Test Execution Complete     ");
+                Console.WriteLine("=================================\n");
+
+                string reportPath = Path.Combine(projectPath, "TestReports");
+                if (Directory.Exists(reportPath))
+                {
+                    var htmlFiles = Directory.GetFiles(reportPath, "*.html")
+                        .OrderByDescending(f => new FileInfo(f).CreationTime)
+                        .FirstOrDefault();
+                    
+                    if (htmlFiles != null)
+                    {
+                        Console.WriteLine($"Test report generated: {htmlFiles}");
+                        Console.WriteLine("\nWould you like to open the report in your browser? (y/n)");
+                        
+                        if (Console.ReadKey().Key == ConsoleKey.Y)
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = htmlFiles,
+                                UseShellExecute = true
+                            });
+                        }
+                    }
+                }
+
+                Console.WriteLine("\nTest Results Summary:");
+                Console.WriteLine("- Positive Tests: Validate correct login with valid credentials");
+                Console.WriteLine("- Negative Tests: Ensure invalid inputs are properly rejected");
+                Console.WriteLine("- Security Tests: Verify protection against common attacks");
+                
+                if (testProcess.ExitCode == 0)
+                {
+                    Console.WriteLine("\n✅ All tests passed successfully!");
+                }
+                else
+                {
+                    Console.WriteLine("\n❌ Some tests failed. Check the report for details.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error running tests: {ex.Message}");
+            }
+
+            Console.WriteLine("\nPress any key to exit...");
+            Console.ReadKey();
+        }
+    }
+}

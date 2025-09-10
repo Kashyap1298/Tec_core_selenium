@@ -1,0 +1,79 @@
+{
+  "TestSettings": {
+    "BaseUrl": "https://localhost:4434/",
+    "ImplicitWait": 10,
+    "PageLoadTimeout": 30,
+    "BrowserOptions": {
+      "Headless": false,
+      "MaximizeWindow": true,
+      "WindowSize": "1920,1080"
+    }
+  },
+  "TestCredentials": {
+    "ValidCredentials": {
+      "Email": "Kashyappadhiyar1210@gmail.com",
+      "Password": "Kashyap@123",
+      "Description": "Valid user credentials for positive testing"
+    },
+    "InvalidCredentials": [
+      {
+        "Email": "invalid.email",
+        "Password": "Password123",
+        "ExpectedResult": "Invalid email format",
+        "TestType": "Format validation"
+      },
+      {
+        "Email": "",
+        "Password": "Password123",
+        "ExpectedResult": "Email is required",
+        "TestType": "Empty field validation"
+      },
+      {
+        "Email": "test@example.com",
+        "Password": "",
+        "ExpectedResult": "Password is required",
+        "TestType": "Empty password validation"
+      },
+      {
+        "Email": "wronguser@example.com",
+        "Password": "WrongPassword123",
+        "ExpectedResult": "Invalid credentials",
+        "TestType": "Authentication failure"
+      },
+      {
+        "Email": "test@",
+        "Password": "Pass",
+        "ExpectedResult": "Invalid email and weak password",
+        "TestType": "Multiple validation errors"
+      }
+    ],
+    "SecurityTests": [
+      {
+        "Email": "' OR '1'='1",
+        "Password": "' OR '1'='1",
+        "TestType": "SQL Injection",
+        "ExpectedResult": "Attack should be blocked"
+      },
+      {
+        "Email": "<script>alert('XSS')</script>",
+        "Password": "Test123",
+        "TestType": "XSS Attack",
+        "ExpectedResult": "Script should be sanitized"
+      },
+      {
+        "Email": "admin' --",
+        "Password": "password",
+        "TestType": "SQL Comment Injection",
+        "ExpectedResult": "Attack should be blocked"
+      }
+    ]
+  },
+  "ReportSettings": {
+    "GenerateHTML": true,
+    "GenerateJSON": true,
+    "IncludeScreenshots": true,
+    "ReportPath": "./TestReports",
+    "ScreenshotOnFailure": true,
+    "ScreenshotOnSuccess": false
+  }
+}

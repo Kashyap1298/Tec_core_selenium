@@ -1,0 +1,16 @@
+# Build folders
+bin/
+obj/
+
+# Visual Studio Code
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Test results
+TestResult*/

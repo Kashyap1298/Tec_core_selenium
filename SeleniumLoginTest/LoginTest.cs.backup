@@ -1,0 +1,201 @@
+using System;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
+
+namespace SeleniumLoginTest
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("=== Selenium Login Test ===");
+            Console.WriteLine();
+            
+            string? email;
+            string password;
+            
+            // Check if credentials are provided as command-line arguments
+            if (args.Length >= 2)
+            {
+                email = args[0];
+                password = args[1];
+                Console.WriteLine($"Using provided credentials for: {email}");
+            }
+            else
+            {
+                // Use default credentials
+                email = "Kashyappadhiyar1210@gmail.com";
+                password = "Kashyap@123";
+                Console.WriteLine($"Using default credentials for: {email}");
+                Console.WriteLine("Note: You can override these by providing command-line arguments: dotnet run <email> <password>");
+            }
+            
+            Console.WriteLine();
+            Console.WriteLine("Starting login test...");
+            
+            // Run the login test
+            try
+            {
+                RunLoginTest(email ?? "", password);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Test failed: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+            
+            Console.WriteLine("\nTest completed successfully!");
+        }
+        
+        static void RunLoginTest(string email, string password)
+        {
+            // Configure Chrome options
+            ChromeOptions options = new ChromeOptions();
+            
+            // Add option to ignore SSL certificate errors
+            options.AddArgument("--ignore-certificate-errors");
+            options.AddArgument("--ignore-ssl-errors");
+            options.AddArgument("--allow-insecure-localhost");
+            
+            // Set window size to be larger
+            options.AddArgument("--start-maximized");  // Start with maximized window
+            options.AddArgument("--window-size=1920,1080");  // Set default size if not maximized
+            
+            // Optional: Run in headless mode (comment out if you want to see the browser)
+            // options.AddArgument("--headless");
+            
+            // Initialize Chrome driver
+            using (IWebDriver driver = new ChromeDriver(options))
+            {
+                try
+                {
+                    // Maximize the browser window (additional assurance)
+                    driver.Manage().Window.Maximize();
+                    Console.WriteLine("Browser window maximized for better visibility");
+                    
+                    // Set implicit wait
+                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                    
+                    // Navigate to the login page
+                    Console.WriteLine("Navigating to https://localhost:4434/");
+                    driver.Navigate().GoToUrl("https://localhost:4434/");
+                    
+                    // Wait a moment for the page to load
+                    System.Threading.Thread.Sleep(2000);
+                    
+                    // Find and fill the email field
+                    Console.WriteLine("Finding email field...");
+                    IWebElement emailField = driver.FindElement(By.Id("Email"));
+                    emailField.Clear();
+                    emailField.SendKeys(email);
+                    Console.WriteLine("Email entered successfully");
+                    
+                    // Find and fill the password field
+                    Console.WriteLine("Finding password field...");
+                    IWebElement passwordField = driver.FindElement(By.Id("Password"));
+                    passwordField.Clear();
+                    passwordField.SendKeys(password);
+                    Console.WriteLine("Password entered successfully");
+                    
+                    // Find and click the submit button (assuming there's a submit button)
+                    // You may need to adjust this selector based on your actual form
+                    try
+                    {
+                        // Try to find a submit button by common selectors
+                        IWebElement? submitButton = null;
+                        
+                        try
+                        {
+                            submitButton = driver.FindElement(By.CssSelector("button[type='submit']"));
+                        }
+                        catch
+                        {
+                            try
+                            {
+                                submitButton = driver.FindElement(By.CssSelector("input[type='submit']"));
+                            }
+                            catch
+                            {
+                                // Try to find any button with text like "Login" or "Sign In"
+                                submitButton = driver.FindElement(By.XPath("//button[contains(text(), 'Login') or contains(text(), 'Sign In') or contains(text(), 'Submit')]"));
+                            }
+                        }
+                        
+                        if (submitButton != null)
+                        {
+                            Console.WriteLine("Clicking submit button...");
+                            submitButton.Click();
+                            
+                            // Wait for navigation or response
+                            System.Threading.Thread.Sleep(3000);
+                            
+                            Console.WriteLine("Login attempt completed!");
+                            Console.WriteLine($"Current URL: {driver.Url}");
+                            Console.WriteLine($"Page Title: {driver.Title}");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Submit button not found. Form filled but not submitted.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Could not find submit button: {ex.Message}");
+                        Console.WriteLine("Form fields have been filled. You may need to manually submit.");
+                    }
+                    
+                    // Take a screenshot for verification
+                    try
+                    {
+                        Screenshot screenshot = ((ITakesScreenshot)driver).GetScreenshot();
+                        string screenshotPath = "login_test_result.png";
+                        screenshot.SaveAsFile(screenshotPath);
+                        Console.WriteLine($"Screenshot saved as: {screenshotPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Could not save screenshot: {ex.Message}");
+                    }
+                    
+                    // Keep browser open for 5 seconds to see the result
+                    Console.WriteLine("Keeping browser open for 5 seconds...");
+                    System.Threading.Thread.Sleep(5000);
+                }
+                finally
+                {
+                    // Close the browser
+                    driver.Quit();
+                    Console.WriteLine("Browser closed.");
+                }
+            }
+        }
+        
+        static string ReadPassword()
+        {
+            string password = "";
+            ConsoleKeyInfo key;
+            
+            do
+            {
+                key = Console.ReadKey(true);
+                
+                // Ignore any key that isn't a printable character
+                if (key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Enter)
+                {
+                    password += key.KeyChar;
+                    Console.Write("*");
+                }
+                else if (key.Key == ConsoleKey.Backspace && password.Length > 0)
+                {
+                    password = password.Substring(0, password.Length - 1);
+                    Console.Write("\b \b");
+                }
+            }
+            while (key.Key != ConsoleKey.Enter);
+            
+            Console.WriteLine();
+            return password;
+        }
+    }
+}

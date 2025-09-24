@@ -51,46 +51,34 @@ namespace CustomerImportAutomation
         {
             try
             {
-                if (_driver == null || _wait == null)
-                {
-                    throw new InvalidOperationException("Driver not initialized. Call SetupDriver first.");
-                }
-
                 Console.WriteLine($"\n[STEP] Logging in...");
                 Console.WriteLine($"[INFO] Navigating to: https://localhost:4434/");
-                _driver!.Navigate().GoToUrl("https://localhost:4434/");
-
+                _driver.Navigate().GoToUrl("https://localhost:4434/");
+                
                 // Wait for email field
                 Console.WriteLine("[INFO] Looking for Email field...");
-                var emailField = _wait!.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id("Email")));
+                var emailField = _wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id("Email")));
                 emailField.Clear();
                 emailField.SendKeys(email);
                 Console.WriteLine($"[OK] Entered email: {email}");
-
+                
                 // Enter password
                 Console.WriteLine("[INFO] Looking for Password field...");
-                var passwordField = _driver!.FindElement(By.Id("Password"));
+                var passwordField = _driver.FindElement(By.Id("Password"));
                 passwordField.Clear();
                 passwordField.SendKeys(password);
                 Console.WriteLine("[OK] Entered password");
-
+                
                 // Click login button
                 Console.WriteLine("[INFO] Looking for submit button...");
                 var loginButton = _driver.FindElement(By.XPath("//button[@type='submit'] | //input[@type='submit']"));
                 loginButton.Click();
                 Console.WriteLine("[OK] Clicked login button");
-
+                
                 // Wait for navigation
                 Thread.Sleep(3000);
-
+                
                 Console.WriteLine($"[SUCCESS] Login completed! Current URL: {_driver.Url}");
-
-                // Check if we're on an unexpected page after login
-                if (_driver.Url.Contains("/Export/ExportRules"))
-                {
-                    Console.WriteLine("[INFO] Default redirect to ExportRules detected after login");
-                }
-
                 return true;
             }
             catch (Exception e)
@@ -106,7 +94,7 @@ namespace CustomerImportAutomation
             Console.WriteLine("Browser session is active. You can interact with the page.");
             Console.WriteLine("Press any key to exit and close the browser.");
             Console.WriteLine(new string('=', 50) + "\n");
-
+            
             try
             {
                 Console.ReadKey();
@@ -115,11 +103,6 @@ namespace CustomerImportAutomation
             {
                 // Handle Ctrl+C or other interruptions
             }
-        }
-
-        public void CloseSession()
-        {
-            Dispose();
         }
 
         public void Dispose()

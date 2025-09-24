@@ -7,12 +7,27 @@ using SeleniumExtras.WaitHelpers;
 
 namespace CustomerImportAutomation
 {
-    public class ExportCustomerTest
+    public class ExportCustomerTestCopy
     {
         static void Main(string[] args)
         {
             Console.WriteLine("===========================================");
-            Console.WriteLine("EXPORT CUSTOMER TEST");
+            Console.WriteLine("EXPORT CUSTOMER TEST WITH INPUT VALIDATION");
+            Console.WriteLine("===========================================");
+            
+            // Run all test cases
+            Console.WriteLine("\n[TEST SUITE] Running Input Validation Tests...");
+            
+            RunPositiveInputTest();
+            Thread.Sleep(2000);
+            
+            RunNegativeInputTest();
+            Thread.Sleep(2000);
+            
+            RunExcessiveInputTest();
+            Thread.Sleep(2000);
+            
+            Console.WriteLine("\n[TEST SUITE] All Input Validation Tests Completed");
             Console.WriteLine("===========================================");
             
             StayLoggedIn loginSession = null;
@@ -3103,6 +3118,419 @@ namespace CustomerImportAutomation
                 }
                 
                 Console.WriteLine("\n[INFO] Test completed");
+            }
+        }
+        
+        // Test Case 1: Positive Input Test
+        static void RunPositiveInputTest()
+        {
+            Console.WriteLine("\n=====================================");
+            Console.WriteLine("[TEST CASE 1] POSITIVE INPUT TEST");
+            Console.WriteLine("=====================================");
+            
+            StayLoggedIn loginSession = null;
+            
+            try
+            {
+                // Initialize and Login
+                loginSession = new StayLoggedIn();
+                bool loginSuccess = loginSession.Login("Kashyappadhiyar1210@gmail.com", "Kashyap@123");
+                if (!loginSuccess)
+                {
+                    Console.WriteLine("[FAIL] Login failed for positive test");
+                    return;
+                }
+                
+                // Navigate to Export Customer page
+                Console.WriteLine("\n[POSITIVE TEST] Navigating to Export Customer page...");
+                loginSession.Driver.Navigate().GoToUrl("https://localhost:4434/Export/ExportCustomer");
+                Thread.Sleep(3000);
+                Console.WriteLine("[SUCCESS] Navigated to Export Customer page");
+                
+                // Click Create New button
+                Console.WriteLine("[POSITIVE TEST] Looking for Create New button...");
+                try
+                {
+                    IWebElement createNewBtn = null;
+                    try
+                    {
+                        // Try to find by exact href
+                        createNewBtn = loginSession.Driver.FindElement(By.XPath("//a[@href='/Export/ExportCustomer/Create']"));
+                        Console.WriteLine("[SUCCESS] Found Create New button by href");
+                    }
+                    catch
+                    {
+                        // Try to find by link text
+                        createNewBtn = loginSession.Driver.FindElement(By.LinkText("Create New"));
+                        Console.WriteLine("[SUCCESS] Found Create New button by link text");
+                    }
+                    
+                    // Scroll to button and click
+                    ((IJavaScriptExecutor)loginSession.Driver).ExecuteScript("arguments[0].scrollIntoView(true);", createNewBtn);
+                    Thread.Sleep(500);
+                    ((IJavaScriptExecutor)loginSession.Driver).ExecuteScript("arguments[0].click();", createNewBtn);
+                    Console.WriteLine("[SUCCESS] Clicked Create New button");
+                    Thread.Sleep(2000);
+                    Console.WriteLine($"[INFO] Current URL: {loginSession.Driver.Url}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Failed to click Create New button: {ex.Message}");
+                    throw;
+                }
+                
+                Console.WriteLine("\n[POSITIVE TEST] Filling form with valid data...");
+                
+                // Fill form with valid positive inputs
+                FillInput(loginSession.Driver, "Prophet21ID", "P21_12345");
+                FillInput(loginSession.Driver, "CustNmbr", "CUST001");
+                FillInput(loginSession.Driver, "UsesDelay", "5");
+                FillInput(loginSession.Driver, "NotificationEmails", "valid@email.com");
+                FillInput(loginSession.Driver, "ExternalUserName", "validuser123");
+                FillInput(loginSession.Driver, "ExternalPassword", "ValidPass123!");
+                FillInput(loginSession.Driver, "ExternalEndPoint", "https://api.example.com");
+                FillInput(loginSession.Driver, "SEDCDatabaseName", "ValidDB");
+                FillInput(loginSession.Driver, "TECErrorEmails", "error@email.com");
+                FillInput(loginSession.Driver, "TECProcessEmails", "process@email.com");
+                
+                // Click Create button and check for validation
+                ClickCreateAndCheckValidation(loginSession.Driver, "POSITIVE");
+                
+                Console.WriteLine("[POSITIVE TEST] Test completed");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Positive test failed: {ex.Message}");
+            }
+            finally
+            {
+                if (loginSession != null) loginSession.Dispose();
+            }
+        }
+        
+        // Test Case 2: Negative Input Test
+        static void RunNegativeInputTest()
+        {
+            Console.WriteLine("\n=====================================");
+            Console.WriteLine("[TEST CASE 2] NEGATIVE INPUT TEST");
+            Console.WriteLine("=====================================");
+            
+            StayLoggedIn loginSession = null;
+            
+            try
+            {
+                // Initialize and Login
+                loginSession = new StayLoggedIn();
+                bool loginSuccess = loginSession.Login("Kashyappadhiyar1210@gmail.com", "Kashyap@123");
+                if (!loginSuccess)
+                {
+                    Console.WriteLine("[FAIL] Login failed for negative test");
+                    return;
+                }
+                
+                // Navigate to Export Customer page
+                Console.WriteLine("\n[NEGATIVE TEST] Navigating to Export Customer page...");
+                loginSession.Driver.Navigate().GoToUrl("https://localhost:4434/Export/ExportCustomer");
+                Thread.Sleep(3000);
+                Console.WriteLine("[SUCCESS] Navigated to Export Customer page");
+                
+                // Click Create New button
+                Console.WriteLine("[NEGATIVE TEST] Looking for Create New button...");
+                try
+                {
+                    IWebElement createNewBtn = null;
+                    try
+                    {
+                        // Try to find by exact href
+                        createNewBtn = loginSession.Driver.FindElement(By.XPath("//a[@href='/Export/ExportCustomer/Create']"));
+                        Console.WriteLine("[SUCCESS] Found Create New button by href");
+                    }
+                    catch
+                    {
+                        // Try to find by link text
+                        createNewBtn = loginSession.Driver.FindElement(By.LinkText("Create New"));
+                        Console.WriteLine("[SUCCESS] Found Create New button by link text");
+                    }
+                    
+                    // Scroll to button and click
+                    ((IJavaScriptExecutor)loginSession.Driver).ExecuteScript("arguments[0].scrollIntoView(true);", createNewBtn);
+                    Thread.Sleep(500);
+                    ((IJavaScriptExecutor)loginSession.Driver).ExecuteScript("arguments[0].click();", createNewBtn);
+                    Console.WriteLine("[SUCCESS] Clicked Create New button");
+                    Thread.Sleep(2000);
+                    Console.WriteLine($"[INFO] Current URL: {loginSession.Driver.Url}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Failed to click Create New button: {ex.Message}");
+                    throw;
+                }
+                
+                Console.WriteLine("\n[NEGATIVE TEST] Filling form with invalid data...");
+                
+                // Fill form with invalid/negative inputs
+                FillInput(loginSession.Driver, "Prophet21ID", "!@#$%^&*()");
+                FillInput(loginSession.Driver, "CustNmbr", "");  // Empty input
+                FillInput(loginSession.Driver, "UsesDelay", "-999");  // Negative number
+                FillInput(loginSession.Driver, "NotificationEmails", "invalid-email");  // Invalid email
+                FillInput(loginSession.Driver, "ExternalUserName", "");  // Empty username
+                FillInput(loginSession.Driver, "ExternalPassword", "123");  // Weak password
+                FillInput(loginSession.Driver, "ExternalEndPoint", "not-a-url");  // Invalid URL
+                FillInput(loginSession.Driver, "SEDCDatabaseName", "!@#$%");  // Special chars
+                FillInput(loginSession.Driver, "TECErrorEmails", "@@@");  // Invalid email
+                FillInput(loginSession.Driver, "TECProcessEmails", "no-at-sign.com");  // Invalid email
+                
+                // Click Create button and check for validation
+                ClickCreateAndCheckValidation(loginSession.Driver, "NEGATIVE");
+                
+                Console.WriteLine("[NEGATIVE TEST] Test completed");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Negative test failed: {ex.Message}");
+            }
+            finally
+            {
+                if (loginSession != null) loginSession.Dispose();
+            }
+        }
+        
+        // Test Case 3: Excessive Input Test
+        static void RunExcessiveInputTest()
+        {
+            Console.WriteLine("\n=====================================");
+            Console.WriteLine("[TEST CASE 3] EXCESSIVE INPUT TEST");
+            Console.WriteLine("=====================================");
+            
+            StayLoggedIn loginSession = null;
+            
+            try
+            {
+                // Initialize and Login
+                loginSession = new StayLoggedIn();
+                bool loginSuccess = loginSession.Login("Kashyappadhiyar1210@gmail.com", "Kashyap@123");
+                if (!loginSuccess)
+                {
+                    Console.WriteLine("[FAIL] Login failed for excessive test");
+                    return;
+                }
+                
+                // Navigate to Export Customer page
+                Console.WriteLine("\n[EXCESSIVE TEST] Navigating to Export Customer page...");
+                loginSession.Driver.Navigate().GoToUrl("https://localhost:4434/Export/ExportCustomer");
+                Thread.Sleep(3000);
+                Console.WriteLine("[SUCCESS] Navigated to Export Customer page");
+                
+                // Click Create New button
+                Console.WriteLine("[EXCESSIVE TEST] Looking for Create New button...");
+                try
+                {
+                    IWebElement createNewBtn = null;
+                    try
+                    {
+                        // Try to find by exact href
+                        createNewBtn = loginSession.Driver.FindElement(By.XPath("//a[@href='/Export/ExportCustomer/Create']"));
+                        Console.WriteLine("[SUCCESS] Found Create New button by href");
+                    }
+                    catch
+                    {
+                        // Try to find by link text
+                        createNewBtn = loginSession.Driver.FindElement(By.LinkText("Create New"));
+                        Console.WriteLine("[SUCCESS] Found Create New button by link text");
+                    }
+                    
+                    // Scroll to button and click
+                    ((IJavaScriptExecutor)loginSession.Driver).ExecuteScript("arguments[0].scrollIntoView(true);", createNewBtn);
+                    Thread.Sleep(500);
+                    ((IJavaScriptExecutor)loginSession.Driver).ExecuteScript("arguments[0].click();", createNewBtn);
+                    Console.WriteLine("[SUCCESS] Clicked Create New button");
+                    Thread.Sleep(2000);
+                    Console.WriteLine($"[INFO] Current URL: {loginSession.Driver.Url}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Failed to click Create New button: {ex.Message}");
+                    throw;
+                }
+                
+                Console.WriteLine("\n[EXCESSIVE TEST] Filling form with maximum length data...");
+                
+                // Generate excessive length strings
+                string longString255 = new string('A', 255);
+                string longString500 = new string('B', 500);
+                string longString1000 = new string('C', 1000);
+                string longEmail = new string('x', 240) + "@test.com";  // Very long email
+                string longNumber = new string('9', 50);  // Very long number
+                
+                // Fill form with excessive length inputs
+                FillInput(loginSession.Driver, "Prophet21ID", longString255);
+                FillInput(loginSession.Driver, "CustNmbr", longString500);
+                FillInput(loginSession.Driver, "UsesDelay", longNumber);
+                FillInput(loginSession.Driver, "NotificationEmails", longEmail);
+                FillInput(loginSession.Driver, "ExternalUserName", longString1000);
+                FillInput(loginSession.Driver, "ExternalPassword", longString500);
+                FillInput(loginSession.Driver, "ExternalEndPoint", "https://" + longString255 + ".com");
+                FillInput(loginSession.Driver, "SEDCDatabaseName", longString500);
+                FillInput(loginSession.Driver, "TECErrorEmails", longEmail);
+                FillInput(loginSession.Driver, "TECProcessEmails", longEmail);
+                
+                // Click Create button and check for validation
+                ClickCreateAndCheckValidation(loginSession.Driver, "EXCESSIVE");
+                
+                Console.WriteLine("[EXCESSIVE TEST] Test completed");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Excessive test failed: {ex.Message}");
+            }
+            finally
+            {
+                if (loginSession != null) loginSession.Dispose();
+            }
+        }
+        
+        // Helper method to fill input fields
+        static void FillInput(IWebDriver driver, string fieldId, string value)
+        {
+            try
+            {
+                IWebElement input = null;
+                
+                // Try to find by ID first
+                try
+                {
+                    input = driver.FindElement(By.Id(fieldId));
+                }
+                catch
+                {
+                    // Try by name
+                    try
+                    {
+                        input = driver.FindElement(By.Name(fieldId));
+                    }
+                    catch
+                    {
+                        // Try by XPath
+                        input = driver.FindElement(By.XPath($"//input[@id='{fieldId}' or @name='{fieldId}']"));
+                    }
+                }
+                
+                // Clear and fill the input
+                input.Clear();
+                input.SendKeys(value);
+                Console.WriteLine($"  ✓ Filled {fieldId}: {(value.Length > 50 ? value.Substring(0, 50) + "..." : value)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  ✗ Failed to fill {fieldId}: {ex.Message}");
+            }
+        }
+        
+        // Helper method to click Create button and check validation messages
+        static void ClickCreateAndCheckValidation(IWebDriver driver, string testType)
+        {
+            try
+            {
+                Console.WriteLine($"\n[{testType}] Clicking Create button...");
+                
+                // Find and click the Create button
+                IWebElement createButton = null;
+                try
+                {
+                    createButton = driver.FindElement(By.XPath("//input[@type='submit' and @value='Create']"));
+                }
+                catch
+                {
+                    try
+                    {
+                        createButton = driver.FindElement(By.XPath("//button[contains(text(), 'Create')]"));
+                    }
+                    catch
+                    {
+                        createButton = driver.FindElement(By.CssSelector("input[type='submit'][value='Create'].btn.btn-primary"));
+                    }
+                }
+                
+                // Scroll to button if needed
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", createButton);
+                Thread.Sleep(500);
+                
+                // Click the button
+                createButton.Click();
+                Console.WriteLine($"[{testType}] Create button clicked");
+                
+                // Wait for validation messages
+                Thread.Sleep(2000);
+                
+                // Check for validation messages
+                Console.WriteLine($"\n[{testType}] Checking for validation messages...");
+                
+                // Look for validation summary
+                try
+                {
+                    var validationSummary = driver.FindElements(By.ClassName("validation-summary-errors"));
+                    if (validationSummary.Count > 0)
+                    {
+                        Console.WriteLine($"[{testType}] Validation Summary Found:");
+                        foreach (var summary in validationSummary)
+                        {
+                            Console.WriteLine($"  - {summary.Text}");
+                        }
+                    }
+                }
+                catch { }
+                
+                // Look for field validation messages
+                try
+                {
+                    var fieldValidations = driver.FindElements(By.ClassName("field-validation-error"));
+                    if (fieldValidations.Count > 0)
+                    {
+                        Console.WriteLine($"[{testType}] Field Validation Errors Found:");
+                        foreach (var validation in fieldValidations)
+                        {
+                            if (!string.IsNullOrWhiteSpace(validation.Text))
+                            {
+                                Console.WriteLine($"  - {validation.Text}");
+                            }
+                        }
+                    }
+                }
+                catch { }
+                
+                // Look for inline validation messages
+                try
+                {
+                    var inlineValidations = driver.FindElements(By.XPath("//span[contains(@class, 'text-danger') or contains(@class, 'error')]"));
+                    if (inlineValidations.Count > 0)
+                    {
+                        Console.WriteLine($"[{testType}] Inline Validation Messages Found:");
+                        foreach (var validation in inlineValidations)
+                        {
+                            if (!string.IsNullOrWhiteSpace(validation.Text))
+                            {
+                                Console.WriteLine($"  - {validation.Text}");
+                            }
+                        }
+                    }
+                }
+                catch { }
+                
+                // Check if form was submitted or stayed on same page
+                string currentUrl = driver.Url;
+                if (currentUrl.Contains("CreateExportCustomer"))
+                {
+                    Console.WriteLine($"[{testType}] Form validation prevented submission - Still on Create page");
+                }
+                else
+                {
+                    Console.WriteLine($"[{testType}] Form submitted - Redirected to: {currentUrl}");
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{testType}] Error clicking Create button: {ex.Message}");
             }
         }
     }

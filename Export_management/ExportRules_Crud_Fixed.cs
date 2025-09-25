@@ -124,9 +124,9 @@ namespace CustomerImportAutomation
                 }
                 Thread.Sleep(500);
 
-                // Step 2: Select Export Type (depends on Evaluation Type)
+                // Step 2: Select Export Type (Kendo dropdown - depends on Evaluation Type)
                 Console.WriteLine("[INFO] Selecting Export Type dropdown...");
-                if (!SelectDropdownByMultipleStrategies("ExportType", "ExportTypeId", "CSV", "1"))
+                if (!SelectKendoExportType("0")) // 0 = All Exports
                 {
                     Console.WriteLine("[WARNING] Could not select Export Type");
                 }
@@ -412,7 +412,7 @@ namespace CustomerImportAutomation
                 // Select dropdowns first
                 SelectDropdownByMultipleStrategies("EvaluationType", "EvaluationTypeId", "Header", "1");
                 Thread.Sleep(500);
-                SelectDropdownByMultipleStrategies("ExportType", "ExportTypeId", "CSV", "1");
+                SelectKendoExportType("0"); // All Exports
                 Thread.Sleep(500);
 
                 // Fill all text fields
@@ -456,7 +456,7 @@ namespace CustomerImportAutomation
                 Thread.Sleep(1000);
 
                 SelectDropdownByMultipleStrategies("EvaluationType", "EvaluationTypeId", "Header", "1");
-                SelectDropdownByMultipleStrategies("ExportType", "ExportTypeId", "CSV", "1");
+                SelectKendoExportType("0"); // All Exports
 
                 string specialChars = "!@#$%^&*()<>?:\"{}|';--";
 
@@ -494,7 +494,7 @@ namespace CustomerImportAutomation
                 Thread.Sleep(1000);
 
                 SelectDropdownByMultipleStrategies("EvaluationType", "EvaluationTypeId", "Header", "1");
-                SelectDropdownByMultipleStrategies("ExportType", "ExportTypeId", "CSV", "1");
+                SelectKendoExportType("0"); // All Exports
 
                 string longString = new string('A', 500);
 
@@ -533,7 +533,7 @@ namespace CustomerImportAutomation
                 Thread.Sleep(1000);
 
                 SelectDropdownByMultipleStrategies("EvaluationType", "EvaluationTypeId", "Header", "1");
-                SelectDropdownByMultipleStrategies("ExportType", "ExportTypeId", "CSV", "1");
+                SelectKendoExportType("0"); // All Exports
 
                 FillInputField("PropertyName", "NumericTest");
                 FillInputField("Rule", "TestRule");
@@ -571,7 +571,7 @@ namespace CustomerImportAutomation
                 Thread.Sleep(1000);
 
                 SelectDropdownByMultipleStrategies("EvaluationType", "EvaluationTypeId", "Header", "1");
-                SelectDropdownByMultipleStrategies("ExportType", "ExportTypeId", "CSV", "1");
+                SelectKendoExportType("0"); // All Exports
 
                 FillInputField("PropertyName", "ToggleTest");
                 FillInputField("Rule", "TestRule");
@@ -607,6 +607,48 @@ namespace CustomerImportAutomation
         }
 
         // Helper Methods
+        private bool SelectKendoExportType(string value)
+        {
+            try
+            {
+                // Method 1: Try clicking the Kendo dropdown to open it
+                try
+                {
+                    var kendoDropdown = driver.FindElement(By.XPath("//span[@role='combobox' and @aria-labelledby='ExportTypeId_label']"));
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", kendoDropdown);
+                    Thread.Sleep(300);
+
+                    // Select the option from the dropdown list
+                    string optionXpath = value == "0"
+                        ? "//li[@role='option' and contains(text(), 'All Exports')]"
+                        : $"//li[@role='option' and @data-offset-index='{value}']";
+
+                    var option = wait.Until(d => d.FindElement(By.XPath(optionXpath)));
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", option);
+                    Console.WriteLine($"    ✓ Selected Export Type via Kendo dropdown");
+                    return true;
+                }
+                catch
+                {
+                    // Method 2: Try to set value directly via JavaScript
+                    ((IJavaScriptExecutor)driver).ExecuteScript(@"
+                        var dropdown = $('#ExportTypeId').data('kendoDropDownList');
+                        if (dropdown) {
+                            dropdown.value('" + value + @"');
+                            dropdown.trigger('change');
+                        }
+                    ");
+                    Console.WriteLine($"    ✓ Selected Export Type via JavaScript");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"    ✗ Failed to select Export Type: {ex.Message}");
+                return false;
+            }
+        }
+
         private void ClickCreateNewButton()
         {
             try

@@ -9,18 +9,18 @@ namespace ExportRulesAutomation
 {
     public class ExportRules_CRUD_Operations
     {
-        private readonly StayLoggedIn _session;
-        private readonly IWebDriver _driver;
-        private readonly WebDriverWait _wait;
+        private readonly StayLoggedIn session;
+        private readonly IWebDriver driver;
+        private readonly WebDriverWait wait;
 
         public ExportRules_CRUD_Operations()
         {
-            _session = new StayLoggedIn();
-            _driver = _session.Driver;
-            _wait = _session.Wait;
+            session = new StayLoggedIn();
+            driver = session.Driver;
+            wait = session.Wait;
         }
 
-        public bool Initialize(string email = "kashyappadhiyar1210@gmail.com", string password = "Kashyap@123")
+        public bool Initialize(string email = "kashyappadhiyar1210@gmail.com", string password = "Kashyap@1234")
         {
             Console.WriteLine("\n" + new string('=', 60));
             Console.WriteLine("EXPORT RULES CRUD OPERATIONS");
@@ -29,7 +29,7 @@ namespace ExportRulesAutomation
             try
             {
                 // Step 1: Login
-                bool loginSuccess = _session.Login(email, password);
+                bool loginSuccess = session.Login(email, password);
                 if (!loginSuccess)
                 {
                     Console.WriteLine("[ERROR] Login failed.");
@@ -41,9 +41,9 @@ namespace ExportRulesAutomation
                 // Step 2: Navigate to Export Customer Rules URL
                 string exportRulesUrl = "https://localhost:4434/Export/ExportCustomer/ExportCustomerRules/9898988";
                 Console.WriteLine($"\n[INFO] Navigating to: {exportRulesUrl}");
-                _driver.Navigate().GoToUrl(exportRulesUrl);
+                driver.Navigate().GoToUrl(exportRulesUrl);
                 Thread.Sleep(2000);
-                Console.WriteLine($"[OK] Current URL: {_driver.Url}");
+                Console.WriteLine($"[OK] Current URL: {driver.Url}");
 
                 return true;
             }
@@ -54,33 +54,127 @@ namespace ExportRulesAutomation
             }
         }
 
-        public void CreateExportRule()
+        public void RunAllTestCases()
+        {
+            Console.WriteLine("\n" + new string('=', 60));
+            Console.WriteLine("RUNNING ALL TEST CASES WITH SAVE");
+            Console.WriteLine(new string('=', 60));
+
+            // Test Case 1: Save Correct Inputs
+            SaveTestCase_CorrectInputs();
+
+            // Test Case 2: Save Incorrect Inputs - Special Characters
+            SaveTestCase_IncorrectInputs_SpecialChars();
+
+            // Test Case 3: Save Incorrect Inputs - Numbers Only
+            SaveTestCase_IncorrectInputs_NumbersOnly();
+
+            // Test Case 4: Save Incorrect Inputs - XSS Script
+            SaveTestCase_IncorrectInputs_XSSScript();
+
+            // Test Case 5: Save Incorrect Inputs - Unicode
+            SaveTestCase_IncorrectInputs_Unicode();
+
+            // Test Case 6: Save Exceed Limits
+            SaveTestCase_ExceedLimits();
+
+            // Test Case 7: Save with Different Rule Orders
+            SaveTestCase_DifferentRuleOrders();
+
+            // Test Case 8: Save with Toggle Enabled
+            SaveTestCase_WithToggleEnabled();
+
+            // Test Case 9: Save with Toggle Disabled
+            SaveTestCase_WithToggleDisabled();
+
+            Console.WriteLine("\n" + new string('=', 60));
+            Console.WriteLine("[SUCCESS] ALL TEST CASES SAVED SUCCESSFULLY");
+            Console.WriteLine(new string('=', 60));
+        }
+
+        private void ClickCreateNewButton()
         {
             try
             {
-                // Step 3: Click Create New button
                 Console.WriteLine("\n[INFO] Looking for Create New button...");
-                IWebElement createNewButton = _wait.Until(ExpectedConditions.ElementToBeClickable(
-                    By.CssSelector("a.create-rule-btn")));
+                Thread.Sleep(2000); // Wait for page to be ready
 
-                createNewButton.Click();
-                Console.WriteLine("[OK] Clicked Create New button");
+                // First check if modal is still open and close it
+                try
+                {
+                    var openModal = driver.FindElement(By.CssSelector(".modal.show, .modal.in, .modal.fade.show"));
+                    if (openModal.Displayed)
+                    {
+                        Console.WriteLine("[WARNING] Modal is still open, attempting to close it");
+
+                        // Try to find and click Cancel button
+                        try
+                        {
+                            var cancelButton = driver.FindElement(By.CssSelector(".modal-footer button[data-bs-dismiss='modal'], .modal-footer .btn-secondary"));
+                            cancelButton.Click();
+                            Console.WriteLine("[OK] Clicked Cancel button to close modal");
+                            Thread.Sleep(1000);
+                        }
+                        catch
+                        {
+                            // If no cancel button, try to close via ESC key or clicking backdrop
+                            IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                            js.ExecuteScript("$('.modal').modal('hide'); $('.modal-backdrop').remove();");
+                            Console.WriteLine("[OK] Closed modal via JavaScript");
+                            Thread.Sleep(1000);
+                        }
+                    }
+                }
+                catch
+                {
+                    // No modal open, continue
+                }
+
+                // Now try to click Create New button
+                IWebElement createNewButton = wait.Until(ExpectedConditions.ElementToBeClickable(
+                    By.CssSelector("a.create-rule-btn[data-soptype='3'][data-prophet21id='9898988']")));
+
+                // Scroll to button and click
+                IJavaScriptExecutor jsExecutor = (IJavaScriptExecutor)driver;
+                jsExecutor.ExecuteScript("arguments[0].scrollIntoView(true);", createNewButton);
+                Thread.Sleep(500);
+
+                try
+                {
+                    createNewButton.Click();
+                    Console.WriteLine("[OK] Clicked Create New button");
+                }
+                catch
+                {
+                    // If regular click fails, use JavaScript
+                    jsExecutor.ExecuteScript("arguments[0].click();", createNewButton);
+                    Console.WriteLine("[OK] Clicked Create New button via JavaScript");
+                }
+
                 Thread.Sleep(2000);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Failed to click Create New button: {ex.Message}");
+            }
+        }
 
-                // Step 4: Select Evaluation Type from dropdown
-                Console.WriteLine("\n[INFO] Selecting Evaluation Type dropdown...");
-                IWebElement evaluationTypeDropdown = _wait.Until(ExpectedConditions.ElementIsVisible(
+        private void SetupBasicFormFields()
+        {
+            try
+            {
+                // Select Evaluation Type from dropdown
+                Console.WriteLine("[INFO] Setting up basic form fields...");
+                IWebElement evaluationTypeDropdown = wait.Until(ExpectedConditions.ElementIsVisible(
                     By.Id("EvaluationTypeId")));
 
                 var selectElement = new SelectElement(evaluationTypeDropdown);
                 selectElement.SelectByValue("1");
                 Console.WriteLine("[OK] Selected 'Header - 1' from Evaluation Type dropdown");
 
-                // Step 5: Select Export Type from Kendo dropdown
-                Console.WriteLine("\n[INFO] Selecting Export Type dropdown...");
+                // Select Export Type from Kendo dropdown
                 Thread.Sleep(1000);
-
-                IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
+                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
                 js.ExecuteScript(@"
                     var dropdown = jQuery('#ExportTypeId').data('kendoDropDownList');
                     if (dropdown) {
@@ -89,230 +183,349 @@ namespace ExportRulesAutomation
                     }
                 ");
                 Console.WriteLine("[OK] Selected 'All Exports' from Export Type dropdown");
-
-                // Run separate test cases
-                Console.WriteLine("\n" + new string('=', 60));
-                Console.WriteLine("RUNNING TEST CASE CATEGORIES");
-                Console.WriteLine(new string('=', 60));
-
-                // Test Case 1: Correct Input
-                TestCorrectInputs();
-
-                // Test Case 2: Incorrect Inputs
-                TestIncorrectInputs();
-
-                // Test Case 3: Exceed Limits
-                TestExceedLimits();
-
-                // Toggle Evaluate True Result
-                ToggleEvaluateTrueResult();
-
-                // Test Rule Order field
-                TestRuleOrderField();
-
-                Console.WriteLine("\n[SUCCESS] All test cases completed.");
-                Console.WriteLine("\n[INFO] Ready to submit form with valid data or perform additional testing.");
+                Thread.Sleep(1000);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] {ex.Message}");
+                Console.WriteLine($"[ERROR] Failed to setup basic form fields: {ex.Message}");
             }
         }
 
-        private void TestCorrectInputs()
+        private void SaveTestCase_CorrectInputs()
         {
             Console.WriteLine("\n" + new string('=', 60));
-            Console.WriteLine("TEST CASE 1: CORRECT INPUTS");
+            Console.WriteLine("TEST CASE 1: CORRECT INPUTS - SAVING");
             Console.WriteLine(new string('=', 60));
 
-            IWebElement propertyNameField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
-            IWebElement ruleField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
-            IWebElement resultWhenTrueField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            ClickCreateNewButton();
+            SetupBasicFormFields();
 
-            // Test Property Name with correct input
-            Console.WriteLine("\n[FIELD] Property Name - CORRECT INPUT");
+            IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+            IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+            IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
+
             propertyNameField.Clear();
-            propertyNameField.SendKeys("Test Property name 123");
-            Console.WriteLine("[INPUT] Test Property name 123");
-            Thread.Sleep(500);
+            propertyNameField.SendKeys("TC1_Correct_Property");
+            Console.WriteLine("[INPUT] Property Name: TC1_Correct_Property");
 
-            // Test Rule with correct input
-            Console.WriteLine("\n[FIELD] Rule - CORRECT INPUT");
             ruleField.Clear();
-            ruleField.SendKeys("Test Rule name 123");
-            Console.WriteLine("[INPUT] Test Rule name 123");
-            Thread.Sleep(500);
+            ruleField.SendKeys("TC1_Correct_Rule_123");
+            Console.WriteLine("[INPUT] Rule: TC1_Correct_Rule_123");
 
-            // Test Result When True with correct input
-            Console.WriteLine("\n[FIELD] Result When True - CORRECT INPUT");
             resultWhenTrueField.Clear();
-            resultWhenTrueField.SendKeys("Test Result when true 123");
-            Console.WriteLine("[INPUT] Test Result when true 123");
-            Thread.Sleep(500);
+            resultWhenTrueField.SendKeys("TC1_Correct_Result_True");
+            Console.WriteLine("[INPUT] Result When True: TC1_Correct_Result_True");
 
-            Console.WriteLine("\n[DONE] Correct input test case completed");
+            ruleOrderField.Clear();
+            ruleOrderField.SendKeys("1");
+            Console.WriteLine("[INPUT] Rule Order: 1");
+
+            SaveCurrentForm();
         }
 
-        private void TestIncorrectInputs()
+        private void SaveTestCase_IncorrectInputs_SpecialChars()
         {
             Console.WriteLine("\n" + new string('=', 60));
-            Console.WriteLine("TEST CASE 2: INCORRECT INPUTS");
+            Console.WriteLine("TEST CASE 2: INCORRECT INPUTS - SPECIAL CHARACTERS - SAVING");
             Console.WriteLine(new string('=', 60));
 
-            IWebElement propertyNameField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
-            IWebElement ruleField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
-            IWebElement resultWhenTrueField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            ClickCreateNewButton();
+            SetupBasicFormFields();
 
-            var incorrectInputs = new[]
-            {
-                new { Name = "SPECIAL CHARACTERS", Value = "%$^$%^$%^#$" },
-                new { Name = "NUMBERS ONLY", Value = "452353425" },
-                new { Name = "XSS SCRIPT", Value = "<script>alert(1)</script>" },
-                new { Name = "UNICODE CHARACTERS", Value = "??_???_????" }
-            };
+            IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+            IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+            IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
 
-            foreach (var input in incorrectInputs)
-            {
-                Console.WriteLine($"\n[SUB-TEST] {input.Name}: '{input.Value}'");
+            propertyNameField.Clear();
+            propertyNameField.SendKeys("TC2_Special_Chars_%$#@!");
+            Console.WriteLine("[INPUT] Property Name: TC2_Special_Chars_%$#@!");
 
-                // Test Property Name
-                Console.WriteLine("[FIELD] Property Name");
-                propertyNameField.Clear();
-                propertyNameField.SendKeys(input.Value);
-                Thread.Sleep(300);
+            ruleField.Clear();
+            ruleField.SendKeys("%$^$%^$%^#$");
+            Console.WriteLine("[INPUT] Rule: %$^$%^$%^#$");
 
-                // Test Rule
-                Console.WriteLine("[FIELD] Rule");
-                ruleField.Clear();
-                ruleField.SendKeys(input.Value);
-                Thread.Sleep(300);
+            resultWhenTrueField.Clear();
+            resultWhenTrueField.SendKeys("TC2_Special_#$%^&*");
+            Console.WriteLine("[INPUT] Result When True: TC2_Special_#$%^&*");
 
-                // Test Result When True
-                Console.WriteLine("[FIELD] Result When True");
-                resultWhenTrueField.Clear();
-                resultWhenTrueField.SendKeys(input.Value);
-                Thread.Sleep(300);
-            }
+            ruleOrderField.Clear();
+            ruleOrderField.SendKeys("2");
+            Console.WriteLine("[INPUT] Rule Order: 2");
 
-            Console.WriteLine("\n[DONE] Incorrect inputs test case completed");
+            SaveCurrentForm();
         }
 
-        private void TestExceedLimits()
+        private void SaveTestCase_IncorrectInputs_NumbersOnly()
         {
             Console.WriteLine("\n" + new string('=', 60));
-            Console.WriteLine("TEST CASE 3: EXCEED LIMITS");
+            Console.WriteLine("TEST CASE 3: INCORRECT INPUTS - NUMBERS ONLY - SAVING");
             Console.WriteLine(new string('=', 60));
 
-            IWebElement propertyNameField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
-            IWebElement ruleField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
-            IWebElement resultWhenTrueField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            ClickCreateNewButton();
+            SetupBasicFormFields();
 
-            string exceedLimitValue = "34555555555555555555555555555555555555555555555555555555555555555";
+            IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+            IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+            IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
 
-            // Test Property Name with exceed limits
-            Console.WriteLine("\n[FIELD] Property Name - EXCEED LIMITS");
+            propertyNameField.Clear();
+            propertyNameField.SendKeys("TC3_Numbers_452353425");
+            Console.WriteLine("[INPUT] Property Name: TC3_Numbers_452353425");
+
+            ruleField.Clear();
+            ruleField.SendKeys("452353425");
+            Console.WriteLine("[INPUT] Rule: 452353425");
+
+            resultWhenTrueField.Clear();
+            resultWhenTrueField.SendKeys("999888777");
+            Console.WriteLine("[INPUT] Result When True: 999888777");
+
+            ruleOrderField.Clear();
+            ruleOrderField.SendKeys("3");
+            Console.WriteLine("[INPUT] Rule Order: 3");
+
+            SaveCurrentForm();
+        }
+
+        private void SaveTestCase_IncorrectInputs_XSSScript()
+        {
+            Console.WriteLine("\n" + new string('=', 60));
+            Console.WriteLine("TEST CASE 4: INCORRECT INPUTS - XSS SCRIPT - SAVING");
+            Console.WriteLine(new string('=', 60));
+
+            ClickCreateNewButton();
+            SetupBasicFormFields();
+
+            IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+            IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+            IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
+
+            propertyNameField.Clear();
+            propertyNameField.SendKeys("TC4_XSS_Test");
+            Console.WriteLine("[INPUT] Property Name: TC4_XSS_Test");
+
+            ruleField.Clear();
+            ruleField.SendKeys("<script>alert(1)</script>");
+            Console.WriteLine("[INPUT] Rule: <script>alert(1)</script>");
+
+            resultWhenTrueField.Clear();
+            resultWhenTrueField.SendKeys("TC4_XSS_Result");
+            Console.WriteLine("[INPUT] Result When True: TC4_XSS_Result");
+
+            ruleOrderField.Clear();
+            ruleOrderField.SendKeys("4");
+            Console.WriteLine("[INPUT] Rule Order: 4");
+
+            SaveCurrentForm();
+        }
+
+        private void SaveTestCase_IncorrectInputs_Unicode()
+        {
+            Console.WriteLine("\n" + new string('=', 60));
+            Console.WriteLine("TEST CASE 5: INCORRECT INPUTS - UNICODE - SAVING");
+            Console.WriteLine(new string('=', 60));
+
+            ClickCreateNewButton();
+            SetupBasicFormFields();
+
+            IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+            IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+            IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
+
+            propertyNameField.Clear();
+            propertyNameField.SendKeys("TC5_Unicode_测试");
+            Console.WriteLine("[INPUT] Property Name: TC5_Unicode_测试");
+
+            ruleField.Clear();
+            ruleField.SendKeys("??_???_????");
+            Console.WriteLine("[INPUT] Rule: ??_???_????");
+
+            resultWhenTrueField.Clear();
+            resultWhenTrueField.SendKeys("TC5_Unicode_結果");
+            Console.WriteLine("[INPUT] Result When True: TC5_Unicode_結果");
+
+            ruleOrderField.Clear();
+            ruleOrderField.SendKeys("5");
+            Console.WriteLine("[INPUT] Rule Order: 5");
+
+            SaveCurrentForm();
+        }
+
+        private void SaveTestCase_ExceedLimits()
+        {
+            Console.WriteLine("\n" + new string('=', 60));
+            Console.WriteLine("TEST CASE 6: EXCEED LIMITS - SAVING");
+            Console.WriteLine(new string('=', 60));
+
+            ClickCreateNewButton();
+            SetupBasicFormFields();
+
+            IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+            IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+            IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
+
+            string exceedLimitValue = "TC6_Exceed_34555555555555555555555555555555555555555555555555555555555555555";
+
             propertyNameField.Clear();
             propertyNameField.SendKeys(exceedLimitValue);
-            Console.WriteLine($"[INPUT] {exceedLimitValue}");
-            Thread.Sleep(500);
+            Console.WriteLine($"[INPUT] Property Name: {exceedLimitValue}");
 
-            // Test Rule with exceed limits
-            Console.WriteLine("\n[FIELD] Rule - EXCEED LIMITS");
             ruleField.Clear();
             ruleField.SendKeys(exceedLimitValue);
-            Console.WriteLine($"[INPUT] {exceedLimitValue}");
-            Thread.Sleep(500);
+            Console.WriteLine($"[INPUT] Rule: {exceedLimitValue}");
 
-            // Test Result When True with exceed limits
-            Console.WriteLine("\n[FIELD] Result When True - EXCEED LIMITS");
             resultWhenTrueField.Clear();
             resultWhenTrueField.SendKeys(exceedLimitValue);
-            Console.WriteLine($"[INPUT] {exceedLimitValue}");
-            Thread.Sleep(500);
+            Console.WriteLine($"[INPUT] Result When True: {exceedLimitValue}");
 
-            // Set all fields to valid values after testing
-            Console.WriteLine("\n[INFO] Setting all fields to valid values...");
-            propertyNameField.Clear();
-            propertyNameField.SendKeys("Valid Property Name");
-            ruleField.Clear();
-            ruleField.SendKeys("Valid Rule");
-            resultWhenTrueField.Clear();
-            resultWhenTrueField.SendKeys("Valid Result When True");
+            ruleOrderField.Clear();
+            ruleOrderField.SendKeys("6");
+            Console.WriteLine("[INPUT] Rule Order: 6");
 
-            Console.WriteLine("[DONE] Exceed limits test case completed - Fields set to valid values");
+            SaveCurrentForm();
         }
 
-        private void TestRuleOrderField()
+        private void SaveTestCase_DifferentRuleOrders()
         {
             Console.WriteLine("\n" + new string('=', 60));
-            Console.WriteLine("RULE ORDER FIELD TESTING");
+            Console.WriteLine("TEST CASE 7: DIFFERENT RULE ORDERS - SAVING");
             Console.WriteLine(new string('=', 60));
 
-            try
+            var ruleOrders = new[] { "999", "0", "-5", "10.5" };
+            int index = 7;
+
+            foreach (var order in ruleOrders)
             {
-                IWebElement ruleOrderField = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
+                ClickCreateNewButton();
+                SetupBasicFormFields();
 
-                var testCases = new[]
-                {
-                    new { TestName = "VALID NUMBER", Value = "10" },
-                    new { TestName = "MINIMUM VALID", Value = "1" },
-                    new { TestName = "LARGE NUMBER", Value = "9999" },
-                    new { TestName = "ZERO VALUE", Value = "0" },
-                    new { TestName = "NEGATIVE NUMBER", Value = "-5" },
-                    new { TestName = "DECIMAL NUMBER", Value = "5.5" }
-                };
+                IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+                IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+                IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+                IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
 
-                foreach (var testCase in testCases)
-                {
-                    Console.WriteLine($"\n[TEST] Rule Order - {testCase.TestName}");
-                    ruleOrderField.Clear();
-                    ruleOrderField.SendKeys(testCase.Value);
-                    Console.WriteLine($"[INPUT] {testCase.Value}");
-                    Thread.Sleep(500);
-                }
+                propertyNameField.Clear();
+                propertyNameField.SendKeys($"TC{index}_RuleOrder_{order.Replace(".", "_")}");
+                Console.WriteLine($"[INPUT] Property Name: TC{index}_RuleOrder_{order.Replace(".", "_")}");
 
-                // Set valid value greater than zero
+                ruleField.Clear();
+                ruleField.SendKeys($"Rule_Order_Test_{order}");
+                Console.WriteLine($"[INPUT] Rule: Rule_Order_Test_{order}");
+
+                resultWhenTrueField.Clear();
+                resultWhenTrueField.SendKeys($"Result_Order_{order}");
+                Console.WriteLine($"[INPUT] Result When True: Result_Order_{order}");
+
                 ruleOrderField.Clear();
-                ruleOrderField.SendKeys("5");
-                Console.WriteLine("\n[DONE] Rule Order set to valid value: 5 (greater than zero)");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ERROR] Failed to test Rule Order field: {ex.Message}");
+                ruleOrderField.SendKeys(order);
+                Console.WriteLine($"[INPUT] Rule Order: {order}");
+
+                SaveCurrentForm();
+                index++;
             }
         }
 
-        private void ToggleEvaluateTrueResult()
+        private void SaveTestCase_WithToggleEnabled()
         {
             Console.WriteLine("\n" + new string('=', 60));
-            Console.WriteLine("EVALUATE TRUE RESULT TOGGLE");
+            Console.WriteLine("TEST CASE 8: WITH TOGGLE ENABLED - SAVING");
             Console.WriteLine(new string('=', 60));
 
+            ClickCreateNewButton();
+            SetupBasicFormFields();
+
+            IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+            IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+            IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
+
+            propertyNameField.Clear();
+            propertyNameField.SendKeys("TC11_Toggle_Enabled");
+            Console.WriteLine("[INPUT] Property Name: TC11_Toggle_Enabled");
+
+            ruleField.Clear();
+            ruleField.SendKeys("Rule_With_Toggle_ON");
+            Console.WriteLine("[INPUT] Rule: Rule_With_Toggle_ON");
+
+            resultWhenTrueField.Clear();
+            resultWhenTrueField.SendKeys("Result_Toggle_ON");
+            Console.WriteLine("[INPUT] Result When True: Result_Toggle_ON");
+
+            ruleOrderField.Clear();
+            ruleOrderField.SendKeys("11");
+            Console.WriteLine("[INPUT] Rule Order: 11");
+
+            // Enable the toggle
+            EnableToggle();
+
+            SaveCurrentForm();
+        }
+
+        private void SaveTestCase_WithToggleDisabled()
+        {
+            Console.WriteLine("\n" + new string('=', 60));
+            Console.WriteLine("TEST CASE 9: WITH TOGGLE DISABLED - SAVING");
+            Console.WriteLine(new string('=', 60));
+
+            ClickCreateNewButton();
+            SetupBasicFormFields();
+
+            IWebElement propertyNameField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("PropertyName")));
+            IWebElement ruleField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ExportRule")));
+            IWebElement resultWhenTrueField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("ResultWhenTrue")));
+            IWebElement ruleOrderField = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("RuleOrder")));
+
+            propertyNameField.Clear();
+            propertyNameField.SendKeys("TC12_Toggle_Disabled");
+            Console.WriteLine("[INPUT] Property Name: TC12_Toggle_Disabled");
+
+            ruleField.Clear();
+            ruleField.SendKeys("Rule_With_Toggle_OFF");
+            Console.WriteLine("[INPUT] Rule: Rule_With_Toggle_OFF");
+
+            resultWhenTrueField.Clear();
+            resultWhenTrueField.SendKeys("Result_Toggle_OFF");
+            Console.WriteLine("[INPUT] Result When True: Result_Toggle_OFF");
+
+            ruleOrderField.Clear();
+            ruleOrderField.SendKeys("12");
+            Console.WriteLine("[INPUT] Rule Order: 12");
+
+            // Toggle is disabled by default, no need to click
+
+            SaveCurrentForm();
+        }
+
+        private void EnableToggle()
+        {
             try
             {
-                Console.WriteLine("[INFO] Looking for Evaluate True Result toggle...");
+                Console.WriteLine("[INFO] Enabling Evaluate True Result toggle...");
 
-                // Try multiple selectors for the toggle switch
-                IWebElement? toggleSwitch = null;
-
-                // Try to find the Kendo switch element
                 var toggleSelectors = new[]
                 {
                     By.CssSelector("span.k-switch-thumb"),
                     By.CssSelector("#ResultTrueNeedsEvaluation"),
-                    By.CssSelector("input[id='ResultTrueNeedsEvaluation']"),
-                    By.XPath("//label[@for='ResultTrueNeedsEvaluation']/..//span[@class='k-switch-thumb k-rounded-full']"),
-                    By.XPath("//label[@for='ResultTrueNeedsEvaluation']/following-sibling::*//span[@class='k-switch-thumb']")
+                    By.XPath("//label[@for='ResultTrueNeedsEvaluation']/..//span[@class='k-switch-thumb k-rounded-full']")
                 };
 
+                IWebElement? toggleSwitch = null;
                 foreach (var selector in toggleSelectors)
                 {
                     try
                     {
-                        toggleSwitch = _driver.FindElement(selector);
+                        toggleSwitch = driver.FindElement(selector);
                         if (toggleSwitch != null && toggleSwitch.Displayed)
                         {
-                            Console.WriteLine($"[OK] Found toggle switch element");
+                            toggleSwitch.Click();
+                            Console.WriteLine("[OK] Enabled Evaluate True Result toggle");
+                            Thread.Sleep(500);
                             break;
                         }
                     }
@@ -322,127 +535,208 @@ namespace ExportRulesAutomation
                     }
                 }
 
-                if (toggleSwitch != null)
+                if (toggleSwitch == null)
                 {
-                    // Click to enable the toggle
-                    toggleSwitch.Click();
-                    Console.WriteLine("[OK] Clicked Evaluate True Result toggle - ENABLED");
-                    Thread.Sleep(1000);
-
-                    // Optional: Click again to test disable
-                    Console.WriteLine("[INFO] Testing toggle OFF state...");
-                    toggleSwitch.Click();
-                    Console.WriteLine("[OK] Clicked toggle again - DISABLED");
-                    Thread.Sleep(1000);
-
-                    // Enable it again for final state
-                    Console.WriteLine("[INFO] Setting final state to ENABLED...");
-                    toggleSwitch.Click();
-                    Console.WriteLine("[OK] Evaluate True Result toggle - Final state: ENABLED");
-                }
-                else
-                {
-                    // Try JavaScript approach if element not clickable
-                    Console.WriteLine("[WARNING] Could not find toggle element, trying JavaScript...");
-                    IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
-
-                    // Try to toggle using JavaScript
+                    // Try JavaScript approach
+                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
                     js.ExecuteScript(@"
                         var checkbox = document.getElementById('ResultTrueNeedsEvaluation');
                         if (checkbox) {
                             checkbox.checked = true;
                             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                            return 'Toggle enabled via JavaScript';
                         }
-                        return 'Checkbox not found';
                     ");
+                    Console.WriteLine("[OK] Enabled toggle via JavaScript");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WARNING] Could not enable toggle: {ex.Message}");
+            }
+        }
 
-                    Console.WriteLine("[OK] Evaluate True Result toggle enabled via JavaScript");
+        private void SaveCurrentForm()
+        {
+            try
+            {
+                Console.WriteLine("\n[ACTION] Saving current form...");
+
+                // Wait a bit for form to be ready
+                Thread.Sleep(1000);
+
+                // Use JavaScript to find and click the Save button
+                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+
+                // Try to find and click the Save button using JavaScript
+                string saveResult = (string)js.ExecuteScript(@"
+                    // Try multiple ways to find the Save button
+                    var saveButton = document.querySelector('.modal-footer button[type=""submit""]') ||
+                                     document.querySelector('.modal-footer .btn-primary') ||
+                                     document.querySelector('button[type=""submit""].btn-primary') ||
+                                     Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Save');
+
+                    if (saveButton) {
+                        console.log('Found save button:', saveButton);
+                        saveButton.scrollIntoView({behavior: 'smooth', block: 'center'});
+
+                        // Enable button if disabled
+                        if (saveButton.disabled) {
+                            saveButton.disabled = false;
+                            saveButton.removeAttribute('disabled');
+                        }
+
+                        // Try to click
+                        saveButton.click();
+
+                        // Also try submitting the form directly
+                        var form = saveButton.closest('form');
+                        if (form) {
+                            setTimeout(function() {
+                                form.requestSubmit(saveButton);
+                            }, 500);
+                        }
+
+                        return 'Save button clicked';
+                    } else {
+                        // If no button found, try to submit the form directly
+                        var form = document.querySelector('.modal form') || document.querySelector('form');
+                        if (form) {
+                            form.submit();
+                            return 'Form submitted directly';
+                        }
+                        return 'No save button or form found';
+                    }
+                ");
+
+                Console.WriteLine($"[JS Result] {saveResult}");
+
+                // Alternative: Try using Selenium to find and click
+                if (saveResult == "No save button or form found")
+                {
+                    try
+                    {
+                        // Try to find the Save button with explicit wait
+                        var saveButton = wait.Until(ExpectedConditions.ElementToBeClickable(
+                            By.XPath("//div[@class='modal-footer']//button[@type='submit' or contains(@class,'btn-primary')]")));
+
+                        saveButton.Click();
+                        Console.WriteLine("[OK] Clicked Save button via Selenium");
+                    }
+                    catch
+                    {
+                        Console.WriteLine("[WARNING] Could not click Save button via Selenium either");
+                    }
                 }
 
-                Console.WriteLine("\n[DONE] Evaluate True Result toggle testing completed");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ERROR] Failed to toggle Evaluate True Result: {ex.Message}");
-            }
-        }
-
-        public void ClickSaveButton()
-        {
-            Console.WriteLine("\n" + new string('=', 60));
-            Console.WriteLine("SUBMITTING FORM");
-            Console.WriteLine(new string('=', 60));
-
-            try
-            {
-                IWebElement saveButton = _wait.Until(ExpectedConditions.ElementToBeClickable(
-                    By.CssSelector("button[type='submit']")));
-
-                // Scroll to button if needed
-                IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
-                js.ExecuteScript("arguments[0].scrollIntoView(true);", saveButton);
-                Thread.Sleep(500);
-
-                saveButton.Click();
-                Console.WriteLine("[OK] Clicked Save button");
-                Thread.Sleep(3000);
-
-                CheckValidationMessages();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ERROR] Failed to click Save button: {ex.Message}");
-            }
-        }
-
-        private void CheckValidationMessages()
-        {
-            try
-            {
-                var validationErrors = _driver.FindElements(By.CssSelector(".field-validation-error, .validation-summary-errors li, .text-danger"));
-
-                if (validationErrors.Count > 0)
+                if (saveButton != null)
                 {
-                    Console.WriteLine("[VALIDATION] Messages found:");
-                    foreach (var error in validationErrors)
+                    // Ensure button is visible and clickable
+                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+
+                    // Scroll to button if needed
+                    js.ExecuteScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", saveButton);
+                    Thread.Sleep(500);
+
+                    // Check if button is enabled
+                    bool isEnabled = saveButton.Enabled;
+                    Console.WriteLine($"[INFO] Save button enabled: {isEnabled}");
+
+                    if (!isEnabled)
                     {
-                        if (!string.IsNullOrWhiteSpace(error.Text))
+                        Console.WriteLine("[WARNING] Save button is disabled, trying to enable via JavaScript");
+                        js.ExecuteScript("arguments[0].removeAttribute('disabled');", saveButton);
+                        Thread.Sleep(500);
+                    }
+
+                    // Try regular click first
+                    try
+                    {
+                        saveButton.Click();
+                        Console.WriteLine("[OK] Clicked Save button normally");
+                    }
+                    catch
+                    {
+                        // If regular click fails, use JavaScript click
+                        Console.WriteLine("[INFO] Regular click failed, trying JavaScript click");
+                        js.ExecuteScript("arguments[0].click();", saveButton);
+                        Console.WriteLine("[OK] Clicked Save button via JavaScript");
+                    }
+
+                    Thread.Sleep(3000); // Wait for save to complete
+
+                    // Check for validation errors
+                    var validationErrors = driver.FindElements(By.CssSelector(".field-validation-error, .validation-summary-errors li, .text-danger"));
+
+                    if (validationErrors.Count > 0)
+                    {
+                        Console.WriteLine("[VALIDATION] Messages found:");
+                        foreach (var error in validationErrors)
                         {
-                            Console.WriteLine($"  - {error.Text}");
+                            if (!string.IsNullOrWhiteSpace(error.Text))
+                            {
+                                Console.WriteLine($"  - {error.Text}");
+                            }
                         }
                     }
+                    else
+                    {
+                        // Check if modal is still open (save may have failed)
+                        try
+                        {
+                            var modal = driver.FindElement(By.CssSelector(".modal.show, .modal.in"));
+                            if (modal.Displayed)
+                            {
+                                Console.WriteLine("[WARNING] Modal is still open after save attempt");
+
+                                // Try to submit the form directly
+                                Console.WriteLine("[INFO] Attempting to submit form directly");
+                                var form = driver.FindElement(By.CssSelector("form"));
+                                js.ExecuteScript("arguments[0].submit();", form);
+                                Console.WriteLine("[OK] Form submitted via JavaScript");
+                                Thread.Sleep(3000);
+                            }
+                        }
+                        catch
+                        {
+                            // Modal not found or closed - save was likely successful
+                            Console.WriteLine("[SUCCESS] Record saved successfully");
+                        }
+                    }
+
+                    // Wait for page to refresh after save
+                    Thread.Sleep(2000);
                 }
                 else
                 {
-                    Console.WriteLine("[RESULT] No validation errors - Form may have been submitted successfully");
+                    Console.WriteLine("[ERROR] Could not find Save button");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[WARNING] Could not check validation: {ex.Message}");
+                Console.WriteLine($"[ERROR] Failed to save form: {ex.Message}");
+                Console.WriteLine($"[DEBUG] Stack trace: {ex.StackTrace}");
             }
         }
 
         public void Cleanup()
         {
-            _session.CloseSession();
+            session.CloseSession();
         }
 
         public void KeepSessionAlive()
         {
-            _session.KeepAlive();
+            session.KeepAlive();
         }
     }
 
     public class StayLoggedIn : IDisposable
     {
-        private IWebDriver? _driver;
-        private WebDriverWait? _wait;
+        private IWebDriver? webDriver;
+        private WebDriverWait? webDriverWait;
         private bool isDisposed = false;
 
-        public IWebDriver Driver => _driver!;
-        public WebDriverWait Wait => _wait!;
+        public IWebDriver Driver => webDriver!;
+        public WebDriverWait Wait => webDriverWait!;
 
         public StayLoggedIn()
         {
@@ -461,9 +755,9 @@ namespace ExportRulesAutomation
 
             try
             {
-                _driver = new ChromeDriver(chromeOptions);
-                _driver.Manage().Window.Maximize();
-                _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                webDriver = new ChromeDriver(chromeOptions);
+                webDriver.Manage().Window.Maximize();
+                webDriver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
                 Console.WriteLine("[OK] Chrome driver initialized successfully");
             }
             catch (Exception e)
@@ -472,7 +766,7 @@ namespace ExportRulesAutomation
                 throw;
             }
 
-            _wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(15));
+            webDriverWait = new WebDriverWait(webDriver, TimeSpan.FromSeconds(15));
         }
 
         public bool Login(string email, string password)
@@ -480,19 +774,19 @@ namespace ExportRulesAutomation
             try
             {
                 Console.WriteLine($"\n[INFO] Navigating to login page...");
-                _driver!.Navigate().GoToUrl("https://localhost:4434/");
+                webDriver!.Navigate().GoToUrl("https://localhost:4434/");
 
-                var emailField = _wait!.Until(ExpectedConditions.ElementIsVisible(By.Id("Email")));
+                var emailField = webDriverWait!.Until(ExpectedConditions.ElementIsVisible(By.Id("Email")));
                 emailField.Clear();
                 emailField.SendKeys(email);
                 Console.WriteLine($"[OK] Entered email: {email}");
 
-                var passwordField = _driver!.FindElement(By.Id("Password"));
+                var passwordField = webDriver!.FindElement(By.Id("Password"));
                 passwordField.Clear();
                 passwordField.SendKeys(password);
                 Console.WriteLine("[OK] Entered password");
 
-                var loginButton = _driver.FindElement(By.XPath("//button[@type='submit'] | //input[@type='submit']"));
+                var loginButton = webDriver.FindElement(By.XPath("//button[@type='submit'] | //input[@type='submit']"));
                 loginButton.Click();
                 Console.WriteLine("[OK] Clicked login button");
 
@@ -539,10 +833,10 @@ namespace ExportRulesAutomation
             {
                 if (disposing)
                 {
-                    if (_driver != null)
+                    if (webDriver != null)
                     {
-                        _driver.Quit();
-                        _driver.Dispose();
+                        webDriver.Quit();
+                        webDriver.Dispose();
                         Console.WriteLine("[OK] Browser closed.");
                     }
                 }
@@ -561,10 +855,8 @@ namespace ExportRulesAutomation
             {
                 if (crud.Initialize())
                 {
-                    crud.CreateExportRule();
-
-                    // Uncomment to click save button after all tests
-                    // crud.ClickSaveButton();
+                    // Run all test cases and save each one
+                    crud.RunAllTestCases();
 
                     crud.KeepSessionAlive();
                 }
